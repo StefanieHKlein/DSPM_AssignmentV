@@ -48,6 +48,17 @@ source("apiKey.R")
 > Load the packages needed to interact with APIs using R.
 
 ```{r install_load_packages, message=FALSE, warning=FALSE}
+# install and load packages
+if (!require("httr")) install.packages("httr")
+if (!require("jsonlite")) install.packages("jsonlite")
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("rlist")) install.packages("rlist")
+if (!require("tibble")) install.packages("tibble")
+library(httr)  # httr makes http easy
+library(jsonlite)  # A Simple and Robust JSON Parser and Generator for R
+library(tidyverse)  # Easily Install and Load the 'Tidyverse'
+library(rlist)  # A Toolbox for Non-Tabular Data Manipulation
+library(tibble)  # Simple Data Frames
 ```
 
 > Perform a first GET request, that searches for event venues in Germany (countryCode = "DE"). > Extract the content from the response object and inspect the resulting list. Describe what you can see.
