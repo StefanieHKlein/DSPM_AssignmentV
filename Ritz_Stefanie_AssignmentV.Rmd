@@ -66,9 +66,44 @@ library(tibble)  # Simple Data Frames
 ![](1.jpg)
 
 ```{r get_request1, message=FALSE, warning=FALSE}
+venue_response <- GET("https://app.ticketmaster.com/discovery/v2/venues",
+                      query = list(apikey = ticketmasterKey,
+                                   countryCode = "DE")) %>%
+  content(as = "text") %>%  # get content as text
+  fromJSON()  # convert JSON object to Rlist
 ```
 
 ```{r create_dataframe, message=FALSE, warning=FALSE}
+n <- 20
+
+venue_data <- tibble(
+  name = character(n),
+  city = character(n),
+  postalCode = character(n),
+  address = character(n),
+  url = character(n),
+  longitude = numeric(n),
+  latitude = numeric(n)
+)
+
+# get to venue data
+venue_content <- venue_response[["_embedded"]][["venues"]]
+
+# inspect data frame
+names(venue_content)
+dim(venue_content)
+
+# fill data frame venue_data with values from venue_content
+venue_data$name <- venue_content$name
+venue_data$city <- unlist(venue_content$city)
+venue_data$postalCode <- venue_content$postalCode
+venue_data$address <- unlist(venue_content$address)
+venue_data$url <- venue_content$url
+venue_data$longitude <- unlist(venue_content$location[1])
+venue_data$latitude <- unlist(venue_content$location[2])
+
+# inspect data frame venue_data
+glimpse(venue_data)
 ```
 
 ## 4. Interacting with the API - advanced
