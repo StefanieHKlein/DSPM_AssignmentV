@@ -40,6 +40,7 @@ The hyperlink to the project repository is: https://github.com/stefanieritz/Assi
 > Even though this API key is not secret per se (it is publicly visible on the API Explorer website), please comply to the common secrecy practices discussed in the lecture and the tutorial: Treat the API key as a secret token. Your API key should neither appear in the code that you are submitting nor in your public GitHub repository.
 
 ```{r store_code, message=FALSE, warning=FALSE}
+source("apiKey.R")
 ```
 
 ## 3. Interacting with the API - the basics
