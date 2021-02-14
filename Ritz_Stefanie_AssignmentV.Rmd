@@ -263,7 +263,7 @@ glimpse(venue_data_total)
 > You will find that some coordinates lie way beyond the German borders and can be assumed to be faulty. Set coordinate values to NA where the value of longitude is outside the range (5.866944, 15.043611) or where the value of latitude is outside the range (47.271679, 55.0846) (these coordinate ranges have been derived from the extreme points of Germany as listed on Wikipedia (see here). For extreme points of other countries, see here).
 
 ```{r visualize_data, message=FALSE, warning=FALSE}
-head(venue_data_all)
+head(venue_data_total)
 venue_data_total$longitude <- as.numeric(venue_data_total$longitude)
 venue_data_total$latitude <- as.numeric(venue_data_total$latitude)
 
@@ -283,7 +283,7 @@ venue_data_total %>% ggplot(aes(longitude, latitude)) +
 			 caption = "Source: ticketmaster.com") +
 	theme(title = element_text(size = 8, face = 'bold'),
 				plot.caption = element_text(face = "italic")) + 
-  geom_point(colour = "orange")
+  geom_point(colour = "orange", size = 0.5)
 ```
 
 ## 6. Event locations in other countries
