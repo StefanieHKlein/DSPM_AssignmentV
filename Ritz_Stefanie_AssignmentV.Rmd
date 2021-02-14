@@ -344,15 +344,15 @@ venue_response_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
 venue_content_ES <- content(venue_response_ES, as = "text") %>% fromJSON()
 
 # get total number of elements
-totalElements <- as.numeric(venue_content_ES[["page"]][["totalElements"]])
-pages <- as.numeric(venue_content_ES[["page"]][["totalPages"]])
+totalElements <- as.numeric(venue_response_ES[["page"]][["totalElements"]])
+pages <- as.numeric(venue_response_ES[["page"]][["totalPages"]])
 fullPages <- floor(totalElements / 20)
 lastPage <- totalElements - fullPages * 20
 n <- totalElements - 20 - 6
 
-# There are 12236 total results. 20 of them (the first page) are displayed. 
-# The results are presented on 612 pages (611 full pages). 
-# 16 results remain on the last page.
+# There are 3066 total results. 20 of them (the first page) are displayed. 
+# The results are presented on 154 pages (153 full pages). 
+# 6 results remain on the last page.
 
 # create data frame
 venue_data_all_ES <- data.frame(
@@ -364,29 +364,6 @@ venue_data_all_ES <- data.frame(
   longitude = numeric(n),
   latitude = numeric(n)
 )
-
-la <- venue_content[['_embedded']][['venues']][c("name","city", "postalCode", "address", "url", "location")]
-
-# for loop 1
-for (p in 1:n) {
-venue_response_all_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
-                      query = list(
-                        apikey = ticketmasterKey,
-                        countryCode = "ES",
-                        locale = "*",
-                        page = p))
-  venue_content_all_ES <- content(venue_response_all_ES, as = "text") %>% fromJSON()
-  venue_content_all2_ES <- venue_content_all_ES[['_embedded']][['venues']]
-  venue_data_all_ES[(20 * p - 19):(20 * p), ] <- data.frame(
-    name = venue_content_all2_ES$name, 
-    city = venue_content_all2_ES$city, 
-    postalCode = venue_content_all2_ES$postalCode, 
-    address = venue_content_all2_ES$address, 
-    url = venue_content_all2_ES$url, 
-    longitude = venue_content_all2_ES$location[1], 
-    latitude = venue_content_all2_ES$location[2], check.rows = FALSE)
-    Sys.sleep(0.2)
-}
 
 # inspect data frame venue_data
 glimpse(venue_data_all_ES)
