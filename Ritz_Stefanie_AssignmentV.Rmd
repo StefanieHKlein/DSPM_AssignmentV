@@ -124,7 +124,7 @@ venue_response <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(apikey = ticketmasterKey,
                                    countryCode = "DE",
                                    locale = "*",
-                                   page = 1))
+                                   page = 0))
 venue_content <- content(venue_response, as = "text") %>% fromJSON()
 
 # get total number of elements
@@ -132,14 +132,12 @@ totalElements <- as.numeric(venue_content[["page"]][["totalElements"]])
 pages <- as.numeric(venue_content[["page"]][["totalPages"]])
 fullPages <- floor(totalElements / 20)
 lastPage <- totalElements - fullPages * 20
-n <- totalElements - 18
+n <- totalElements - 20 - 18
 
 
-# There are 12238 total results. 20 of them (the first page) are displayed. 
-# The results are presented on 612 (0-611) pages (611 full pages (0-610)).
-# 18 results remain on the last page.
+# There are 12238 total results. 20 of them (the first page) are displayed. The results are presented on 612 (0-611) pages (611 full pages (0-610)). 18 results remain on the last page.
 
-# create data frame
+# create data frame for n = 12200 venues (all pages, except first and last one)
 venue_data_all <- data.frame(
   name = character(n),
   city = character(n),
@@ -150,7 +148,7 @@ venue_data_all <- data.frame(
   latitude = numeric(n)
 )
 
-# for loop 1 (working --> 180 venues)
+# for loop iterating over all venues on the pages 1-610 (excluded first (no. 0) and last page (no. 611))
 for (p in 1:610) {
 venue_response_all <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(
@@ -203,10 +201,7 @@ venue_content_all2 <- venue_content_all[['_embedded']][['venues']]
 # inspect data frame
 glimpse(venue_data_all)
 
-# remove rows no. 12201-12220 (empty)
-venue_data_all <- venue_data_all[1:12200, ]
-
-# retrieve data for last page (18 venues)
+# retrieve data for last page (no. 611, 18 venues)
 venue_response_last <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(apikey = ticketmasterKey,
                                    countryCode = "DE",
