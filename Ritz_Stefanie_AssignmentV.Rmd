@@ -54,11 +54,10 @@ if (!require("jsonlite")) install.packages("jsonlite")
 if (!require("tidyverse")) install.packages("tidyverse")
 if (!require("rlist")) install.packages("rlist")
 if (!require("tibble")) install.packages("tibble")
+
 library(httr)  # httr makes http easy
 library(jsonlite)  # A Simple and Robust JSON Parser and Generator for R
 library(tidyverse)  # Easily Install and Load the 'Tidyverse'
-library(rlist)  # A Toolbox for Non-Tabular Data Manipulation
-library(tibble)  # Simple Data Frames
 ```
 
 > Perform a first GET request, that searches for event venues in Germany (countryCode = "DE"). > Extract the content from the response object and inspect the resulting list. Describe what you can see.
@@ -66,7 +65,7 @@ library(tibble)  # Simple Data Frames
 ![](1.jpg)
 
 ```{r get_request1, message=FALSE, warning=FALSE}
-venue_response <- GET("https://app.ticketmaster.com/discovery/v2/venues",
+venue_response_p0 <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(apikey = ticketmasterKey,
                                    countryCode = "DE",
                                    locale = "*")) %>%
@@ -74,10 +73,11 @@ venue_response <- GET("https://app.ticketmaster.com/discovery/v2/venues",
   fromJSON()  # convert JSON object to Rlist
 ```
 
-```{r create_dataframe1, message=FALSE, warning=FALSE}
+```{r create_dataframe1_DE, message=FALSE, warning=FALSE}
+# create a tibble with 20 rows and 7 columns
 n <- 20
 
-venue_data <- tibble(
+venue_data_p0 <- tibble(
   name = character(n),
   city = character(n),
   postalCode = character(n),
@@ -88,38 +88,32 @@ venue_data <- tibble(
 )
 
 # get to venue data
-venue_content <- venue_response[["_embedded"]][["venues"]]
+venue_content_p0 <- venue_response_DE_p0[["_embedded"]][["venues"]]
 
 # inspect data frame
-names(venue_content)
-dim(venue_content)
+names(venue_content_p0)
+dim(venue_content_p0)
 
 # fill data frame venue_data with values from venue_content
-venue_data$name <- venue_content$name
-venue_data$city <- unlist(venue_content$city)
-venue_data$postalCode <- venue_content$postalCode
-venue_data$address <- unlist(venue_content$address)
-venue_data$url <- venue_content$url
-venue_data$longitude <- unlist(venue_content$location[1])
-venue_data$latitude <- unlist(venue_content$location[2])
+venue_data_p0$name <- venue_content_p0$name
+venue_data_p0$city <- unlist(venue_content_p0$city)
+venue_data_p0$postalCode <- venue_content_p0$postalCode
+venue_data_p0$address <- unlist(venue_content_p0$address)
+venue_data_p0$url <- venue_content_p0$url
+venue_data_p0$longitude <- unlist(venue_content_p0$location[1])
+venue_data_p0$latitude <- unlist(venue_content_p0$location[2])
 
 # inspect data frame venue_data
-glimpse(venue_data)
+glimpse(venue_data_p0)
 ```
 
 ## 4. Interacting with the API - advanced
 
-> Have a closer look at the list element named page. Did your GET request from exercise 3 return all event locations in Germany? Obviously not - there are of course much more venues in Germany than those contained in this list. Your GET request only yielded the first results page containing the first 20 out of several thousands of venues.
-> Check the API documentation under the section Venue Search. How can you request the venues from the remaining results pages?
+> Have a closer look at the list element named page. Did your GET request from exercise 3 return all event locations in Germany? Obviously not - there are of course much more venues in Germany than those contained in this list. Your GET request only yielded the first results page containing the first 20 out of several thousands of venues. Check the API documentation under the section Venue Search. How can you request the venues from the remaining results pages?
 
 By using the parameter "page"	(Page number,	String).
 
-> Write a for loop that iterates through the results pages and performs a GET request for all venues in Germany. After each iteration, extract the seven variables name, city, postalCode, address, url, longitude, and latitude. Join the information in one large data frame.
-> The resulting data frame should look something like this (note that the exact number of search results may have changed since this document has been last modified):
-
-![](2.jpg)
-
-```{r create_dataframe2, message=FALSE, warning=FALSE}
+```{r create_dataframe2_DE, message=FALSE, warning=FALSE}
 venue_response <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(apikey = ticketmasterKey,
                                    countryCode = "DE",
@@ -134,7 +128,6 @@ fullPages <- floor(totalElements / 20)
 lastPage <- totalElements - fullPages * 20
 n <- totalElements - 20 - 18
 
-
 # There are 12238 total results. 20 of them (the first page) are displayed. The results are presented on 612 (0-611) pages (611 full pages (0-610)). 18 results remain on the last page.
 
 # create data frame for n = 12200 venues (all pages, except first and last one)
@@ -147,8 +140,14 @@ venue_data_all <- data.frame(
   longitude = numeric(n),
   latitude = numeric(n)
 )
+```
 
-# for loop iterating over all venues on the pages 1-610 (excluded first (no. 0) and last page (no. 611))
+> Write a for loop that iterates through the results pages and performs a GET request for all venues in Germany. After each iteration, extract the seven variables name, city, postalCode, address, url, longitude, and latitude. Join the information in one large data frame.
+
+I then set up a for loop iterating over all venues on the pages 1-610 (excluded first (no. 0) and last page (no. 611)).
+
+```{r set_up_for_loop_DE, message=FALSE, warning=FALSE}
+# for loop 
 for (p in 1:610) {
 venue_response_all <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(
@@ -197,10 +196,22 @@ venue_content_all2 <- venue_content_all[['_embedded']][['venues']]
     )
     Sys.sleep(0.2)
 }
+```
 
+> The resulting data frame should look something like this (note that the exact number of search results may have changed since this document has been last modified):
+
+![](2.jpg)
+
+I inspect the data frame.
+
+```{r inspect_dataframe3_DE, message=FALSE, warning=FALSE}
 # inspect data frame
 glimpse(venue_data_all)
+```
 
+Lastly, I retrieve the venue data for the last 18 venues.
+
+```{r create_dataframe3_DE, message=FALSE, warning=FALSE}
 # retrieve data for last page (no. 611, 18 venues)
 venue_response_last <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(apikey = ticketmasterKey,
@@ -238,13 +249,17 @@ venue_data_last$url <- venue_content_last$url
 venue_data_last$longitude <- unlist(venue_content_last$location[1])
 venue_data_last$latitude <- unlist(venue_content_last$location[2])
 
-# inspect data frame venue_data
+# inspect data frame venue_data_last
 glimpse(venue_data_last)
 
 # add NA columns for longitude and latitude
 venue_data_last$longitude <- c(rep("NA", 18))
 venue_data_last$latitude <- c(rep("NA", 18))
+```
 
+I then bind the three data frames together using the `dplyr::rbind` function.
+
+```{r create_dataframe_total_DE, message=FALSE, warning=FALSE}
 # bind together venue_data (first 20, page no. 0), venue_data_all (pages 1-610), venue_data_last (page 611)
 venue_data_total <- rbind(venue_data, venue_data_all, venue_data_last)
 
@@ -257,17 +272,20 @@ glimpse(venue_data_total)
 > Below, you can find code that produces a map of Germany. Add points to the map indicating the locations of the event venues across Germany.
 > You will find that some coordinates lie way beyond the German borders and can be assumed to be faulty. Set coordinate values to NA where the value of longitude is outside the range (5.866944, 15.043611) or where the value of latitude is outside the range (47.271679, 55.0846) (these coordinate ranges have been derived from the extreme points of Germany as listed on Wikipedia (see here). For extreme points of other countries, see here).
 
-```{r visualize_data, message=FALSE, warning=FALSE}
+```{r visualize_data_DE, message=FALSE, warning=FALSE}
 head(venue_data_total)
+
+# transform longitude and latitude to numeric data class
 venue_data_total$longitude <- as.numeric(venue_data_total$longitude)
 venue_data_total$latitude <- as.numeric(venue_data_total$latitude)
 
+# exclude venues with coordinates outside the given ranges
 venue_data_total$longitude[venue_data_total$longitude < 5.866944 | 
-                           venue_data_total$longitude > 15] <- NA
-
+                           venue_data_total$longitude > 15.043611] <- NA
 venue_data_total$latitude[venue_data_total$latitude < 47.271679 | 
                         venue_data_total$latitude > 55.0846] <- NA
 
+# visualize venue data using geom_polygon() and geom_point()
 venue_data_total %>% ggplot(aes(longitude, latitude)) + 
   geom_polygon(aes(x = long, y = lat, group = group), 
                data = map_data("world", region = "Germany"),
@@ -284,10 +302,11 @@ venue_data_total %>% ggplot(aes(longitude, latitude)) +
 ## 6. Event locations in other countries
 > Repeat exercises 2 to 5 for another European country of your choice. (Hint: Clean code pays off! If you have coded the exercises efficiently, only very few adaptions need to be made.)
 
-Country: Spain, countryCode = "ES"
+I choose the country 'Spain' (countryCode = "ES").
+First, I extract the first 20 venues (page no. 0).
 
-```{r get_request_ES, message=FALSE, warning=FALSE}
-venue_response_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
+```{r get_request1_ES, message=FALSE, warning=FALSE}
+venue_response_p0_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
                       query = list(apikey = ticketmasterKey,
                                    countryCode = "ES",
                                    locale = "*")) %>%
@@ -295,10 +314,10 @@ venue_response_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
   fromJSON()  # convert JSON object to Rlist
 ```
 
-```{r create_dataframe_ES, message=FALSE, warning=FALSE}
+```{r create_dataframe1_ES, message=FALSE, warning=FALSE}
 n <- 20
 
-venue_data_ES <- tibble(
+venue_data_p0_ES <- tibble(
   name = character(n),
   city = character(n),
   postalCode = character(n),
@@ -309,38 +328,31 @@ venue_data_ES <- tibble(
 )
 
 # get to venue data
-venue_content_ES <- venue_response_ES[["_embedded"]][["venues"]]
+venue_content_p0_ES <- venue_response_p0_ES[["_embedded"]][["venues"]]
 
 # inspect data frame
-names(venue_content_ES)
-dim(venue_content_ES)
+names(venue_content_p0_ES)
+dim(venue_content_p0_ES)
 
 # fill data frame venue_data with values from venue_content
-venue_data_ES$name <- venue_content_ES$name
-venue_data_ES$city <- unlist(venue_content_ES$city)
-venue_data_ES$postalCode <- venue_content_ES$postalCode
-venue_data_ES$address <- unlist(venue_content_ES$address)
-venue_data_ES$url <- venue_content_ES$url
-venue_data_ES$longitude <- unlist(venue_content_ES$location[1])
-venue_data_ES$latitude <- unlist(venue_content_ES$location[2])
+venue_data_p0_ES$name <- venue_content_p0_ES$name
+venue_data_p0_ES$city <- unlist(venue_content_p0_ES$city)
+venue_data_p0_ES$postalCode <- venue_content_p0_ES$postalCode
+venue_data_p0_ES$address <- unlist(venue_content_p0_ES$address)
+venue_data_p0_ES$url <- venue_content_p0_ES$url
+venue_data_p0_ES$longitude <- unlist(venue_content_p0_ES$location[1])
+venue_data_p0_ES$latitude <- unlist(venue_content_p0_ES$location[2])
 
 # inspect data frame venue_data
-glimpse(venue_data_ES)
+glimpse(venue_data_p0_ES)
 ```
 
-# advanced
+I then set up a data frame for the Spanish venues which I fill using a for loop.
 
-```{r create_dataframe2, message=FALSE, warning=FALSE}
-venue_response_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
-                      query = list(apikey = ticketmasterKey,
-                                   countryCode = "ES",
-                                   locale = "*"))
-
-venue_content_ES <- content(venue_response_ES, as = "text") %>% fromJSON()
-
+```{r create_dataframe2_ES, message=FALSE, warning=FALSE}
 # get total number of elements
-totalElements <- as.numeric(venue_response_ES[["page"]][["totalElements"]])
-pages <- as.numeric(venue_response_ES[["page"]][["totalPages"]])
+totalElements <- as.numeric(venue_response_p0_ES[["page"]][["totalElements"]])
+pages <- as.numeric(venue_response_p0_ES[["page"]][["totalPages"]])
 fullPages <- floor(totalElements / 20)
 lastPage <- totalElements - fullPages * 20
 n <- totalElements - 20 - 6
@@ -349,7 +361,7 @@ n <- totalElements - 20 - 6
 # The results are presented on 154 pages (153 full pages). 
 # 6 results remain on the last page.
 
-# create data frame
+# create data frame for 20 (venues per page) * 153 (full pages) observations.
 venue_data_all_ES <- data.frame(
   name = character(n),
   city = character(n),
@@ -360,14 +372,123 @@ venue_data_all_ES <- data.frame(
   latitude = numeric(n)
 )
 
-# inspect data frame venue_data
+# for loop
+for (p in 1:152) {
+venue_response_all_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
+                      query = list(
+                        apikey = ticketmasterKey,
+                        countryCode = "ES",
+                        locale = "*",
+                        page = p))
+venue_content_all <- content(venue_response_all_ES, as = "text") %>% fromJSON()
+venue_content_all2 <- venue_content_all[['_embedded']][['venues']]
+  venue_data_all_ES[(20 * p - 19):(20 * p), ] <- data.frame(
+    if (is.null(venue_content_all2$name)){
+      name = "NA"
+      } else {
+        name = venue_content_all2$name
+        },
+    if (is.null(venue_content_all2$city)){
+      city = "NA"
+      } else {
+        city = venue_content_all2$city
+      },
+    if (is.null(venue_content_all2$postalCode)){
+      postalCode = "NA"
+    } else {
+      postalCode = venue_content_all2$postalCode
+      },
+    if (is.null(venue_content_all2$address)){
+      address = "NA"
+    } else {
+      address = venue_content_all2$address
+      }, 
+    if (is.null(venue_content_all2$url)){
+      url = "NA"
+    } else {
+      url = venue_content_all2$url
+      }, 
+    if (is.null(venue_content_all2$location[1])){
+      longitude = "NA"
+      } else {
+        longitude = venue_content_all2$location[1]
+        },
+    if (is.null(venue_content_all2$location[2])){
+      latitude = "NA"
+      } else {
+        latitude = venue_content_all2$location[2]
+        }
+    )
+    Sys.sleep(0.2)
+}
+
+# inspect data frame venue_data_all_ES
 glimpse(venue_data_all_ES)
 ```
 
+
+```{r create_dataframe3_ES, message=FALSE, warning=FALSE}
+# retrieve data for last page (no. 153, 6 venues)
+venue_response_last_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
+                      query = list(apikey = ticketmasterKey,
+                                   countryCode = "ES",
+                                   locale = "*",
+                                   page = 153)) %>% 
+  content(as = "text") %>% fromJSON()
+  
+# get to venue data
+venue_content_last_ES <- venue_response_last_ES[["_embedded"]][["venues"]]
+
+# inspect data frame
+names(venue_content_last_ES)
+dim(venue_content_last_ES)
+
+# create dataframe for last 18 observations
+n <- 6
+
+venue_data_last_ES <- tibble(
+  name = character(n),
+  city = character(n),
+  postalCode = character(n),
+  address = character(n),
+  url = character(n),
+  longitude = numeric(n),
+  latitude = numeric(n)
+)
+
+# fill data frame venue_data_last_ES with values from venue_content_last_ES
+venue_data_last_ES$name <- venue_content_last_ES$name
+venue_data_last_ES$city <- unlist(venue_content_last_ES$city)
+venue_data_last_ES$postalCode <- venue_content_last_ES$postalCode
+venue_data_last_ES$address <- unlist(venue_content_last_ES$address)
+venue_data_last_ES$url <- venue_content_last_ES$url
+venue_data_last_ES$longitude <- unlist(venue_content_last_ES$location[1])
+venue_data_last_ES$latitude <- unlist(venue_content_last_ES$location[2])
+
+# inspect data frame venue_data_last_ES
+glimpse(venue_data_last_ES)
+
+# add NA columns for longitude and latitude
+venue_data_last_ES$longitude <- c(rep("NA", 6))
+venue_data_last_ES$latitude <- c(rep("NA", 6))
+```
+
+Finally, I bind the three Spanish venue data frames together:
+
+```{r create_dataframe_total_DE, message=FALSE, warning=FALSE}
+# bind together venue_data (first 20, page no. 0), venue_data_all (pages 1-610), venue_data_last (page 611)
+venue_data_total_ES <- rbind(venue_data_p0_ES, venue_data_all_ES, venue_data_last_ES)
+
+# inspect data frame venue_data_total
+glimpse(venue_data_total_ES)
+```
+
+I visualize the Spanish venue data:
+
 ```{r visualize_data_ES, message=FALSE, warning=FALSE}
-head(venue_data_all_ES)
-venue_data_all_ES$longitude <- as.numeric(venue_data_all_ES$longitude)
-venue_data_all_ES$latitude <- as.numeric(venue_data_all_ES$latitude)
+head(venue_data_total_ES)
+venue_data_total_ES$longitude <- as.numeric(venue_data_total_ES$longitude)
+venue_data_total_ES$latitude <- as.numeric(venue_data_total_ES$latitude)
 
 # Spanish mainland
 # Norden: N43° 47′ 0″ W7° 41′ 0″ == 43,78333 // -7,68333
@@ -375,15 +496,13 @@ venue_data_all_ES$latitude <- as.numeric(venue_data_all_ES$latitude)
 # Osten: N42° 19′ E3° 19′ == 42,31666 // 3,31666
 # Westen: N43° 2′ 0″ W9° 18′ 0″ == 43,03333 // -9,3
 
-# venue_data_all$longitude[venue_data_all$longitude < 5.866944 | 
-                           # venue_data_all$longitude > 15] <- NA
+# venue_data_total_ES$longitude[venue_data_total_ES$longitude < 5.866944 | 
+                           # venue_data_total_ES$longitude > 15] <- NA
 
-# venue_data_all$latitude[venue_data_all$latitude < 47.271679 | 
-                        # venue_data_all$latitude > 55.0846] <- NA
+# venue_data_total_ES$latitude[venue_data_total_ES$latitude < 47.271679 | 
+                        # venue_data_total_ES$latitude > 55.0846] <- NA
 
-# venue_data_all <- venue_data_all[1:180,]
-
-# venue_data_all %>% ggplot(aes(longitude, latitude)) + 
+venue_data_total_ES %>% ggplot(aes(longitude, latitude)) + 
   geom_polygon(aes(x = long, y = lat, group = group), 
                data = map_data("world", region = "Spain"),
                fill = "grey90", color = "black") +
