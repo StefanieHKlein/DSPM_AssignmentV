@@ -52,8 +52,6 @@ source("apiKey.R")
 if (!require("httr")) install.packages("httr")
 if (!require("jsonlite")) install.packages("jsonlite")
 if (!require("tidyverse")) install.packages("tidyverse")
-if (!require("rlist")) install.packages("rlist")
-if (!require("tibble")) install.packages("tibble")
 
 library(httr)  # httr makes http easy
 library(jsonlite)  # A Simple and Robust JSON Parser and Generator for R
@@ -88,7 +86,7 @@ venue_data_p0 <- tibble(
 )
 
 # get to venue data
-venue_content_p0 <- venue_response_DE_p0[["_embedded"]][["venues"]]
+venue_content_p0 <- venue_response_p0[["_embedded"]][["venues"]]
 
 # inspect data frame
 names(venue_content_p0)
@@ -137,14 +135,14 @@ venue_data_all <- data.frame(
   postalCode = character(n),
   address = character(n),
   url = character(n),
-  longitude = numeric(n),
-  latitude = numeric(n)
+  longitude = character(n),
+  latitude = character(n)
 )
 ```
 
 > Write a for loop that iterates through the results pages and performs a GET request for all venues in Germany. After each iteration, extract the seven variables name, city, postalCode, address, url, longitude, and latitude. Join the information in one large data frame.
 
-I then set up a for loop iterating over all venues on the pages 1-610 (excluded first (no. 0) and last page (no. 611)).
+I then set up a for loop iterating over all venues on the pages 1-610 (excluding first (no. 0) and last page (no. 611)).
 
 ```{r set_up_for_loop_DE, message=FALSE, warning=FALSE}
 # for loop 
@@ -261,7 +259,7 @@ I then bind the three data frames together using the `dplyr::rbind` function.
 
 ```{r create_dataframe_total_DE, message=FALSE, warning=FALSE}
 # bind together venue_data (first 20, page no. 0), venue_data_all (pages 1-610), venue_data_last (page 611)
-venue_data_total <- rbind(venue_data, venue_data_all, venue_data_last)
+venue_data_total <- rbind(venue_data_p0, venue_data_all, venue_data_last)
 
 # inspect data frame venue_data_total
 glimpse(venue_data_total)
@@ -273,8 +271,6 @@ glimpse(venue_data_total)
 > You will find that some coordinates lie way beyond the German borders and can be assumed to be faulty. Set coordinate values to NA where the value of longitude is outside the range (5.866944, 15.043611) or where the value of latitude is outside the range (47.271679, 55.0846) (these coordinate ranges have been derived from the extreme points of Germany as listed on Wikipedia (see here). For extreme points of other countries, see here).
 
 ```{r visualize_data_DE, message=FALSE, warning=FALSE}
-head(venue_data_total)
-
 # transform longitude and latitude to numeric data class
 venue_data_total$longitude <- as.numeric(venue_data_total$longitude)
 venue_data_total$latitude <- as.numeric(venue_data_total$latitude)
@@ -314,6 +310,8 @@ venue_response_p0_ES <- GET("https://app.ticketmaster.com/discovery/v2/venues",
   fromJSON()  # convert JSON object to Rlist
 ```
 
+Then I create a data frame and store the extracted first 20 observations in it.
+
 ```{r create_dataframe1_ES, message=FALSE, warning=FALSE}
 n <- 20
 
@@ -347,7 +345,7 @@ venue_data_p0_ES$latitude <- unlist(venue_content_p0_ES$location[2])
 glimpse(venue_data_p0_ES)
 ```
 
-I then set up a data frame for the Spanish venues which I fill using a for loop.
+I then set up a data frame for the Spanish venues (pages 1-154 (0-153)) which I fill using a for loop.
 
 ```{r create_dataframe2_ES, message=FALSE, warning=FALSE}
 # get total number of elements
@@ -426,6 +424,7 @@ venue_content_all2 <- venue_content_all[['_embedded']][['venues']]
 glimpse(venue_data_all_ES)
 ```
 
+Lastly, I retrieve the Spanish venue data from the last page (no. 153) and store them in a data frame.
 
 ```{r create_dataframe3_ES, message=FALSE, warning=FALSE}
 # retrieve data for last page (no. 153, 6 venues)
@@ -443,7 +442,7 @@ venue_content_last_ES <- venue_response_last_ES[["_embedded"]][["venues"]]
 names(venue_content_last_ES)
 dim(venue_content_last_ES)
 
-# create dataframe for last 18 observations
+# create dataframe for last 6 observations
 n <- 6
 
 venue_data_last_ES <- tibble(
@@ -475,33 +474,37 @@ venue_data_last_ES$latitude <- c(rep("NA", 6))
 
 Finally, I bind the three Spanish venue data frames together:
 
-```{r create_dataframe_total_DE, message=FALSE, warning=FALSE}
-# bind together venue_data (first 20, page no. 0), venue_data_all (pages 1-610), venue_data_last (page 611)
+```{r create_dataframe_total_ES, message=FALSE, warning=FALSE}
+# bind together venue_data (first 20, page no. 0), venue_data_all (pages 1-152), venue_data_last (page no. 153)
 venue_data_total_ES <- rbind(venue_data_p0_ES, venue_data_all_ES, venue_data_last_ES)
 
 # inspect data frame venue_data_total
 glimpse(venue_data_total_ES)
 ```
 
-I visualize the Spanish venue data:
+Before I visualize the Spanish venue data, I check the range for longitude and latitude.
+I decide to visualize the data for venues located on the Spanish mainland and on the Balearic and the Canary Islands.
 
 ```{r visualize_data_ES, message=FALSE, warning=FALSE}
 head(venue_data_total_ES)
+
 venue_data_total_ES$longitude <- as.numeric(venue_data_total_ES$longitude)
 venue_data_total_ES$latitude <- as.numeric(venue_data_total_ES$latitude)
 
-# Spanish mainland
-# Norden: N43° 47′ 0″ W7° 41′ 0″ == 43,78333 // -7,68333
-# Süden: N36° 0′ 0″ W5° 36′ 0″ == 36,00 // -5,6
-# Osten: N42° 19′ E3° 19′ == 42,31666 // 3,31666
-# Westen: N43° 2′ 0″ W9° 18′ 0″ == 43,03333 // -9,3
+# Spanish extreme points: https://en.wikipedia.org/wiki/List_of_extreme_points_of_Spain
+# Conversion of geo coordinates in decimal degrees: https://www.gps-coordinates.net/gps-coordinates-converter 
+# North: N43° 47′ 0″ W7° 41′ 0″ ==> 43.78333 // -7.68333
+# South: N27° 38′ W17° 59′ ==> 27.63333 // -17.98333
+# East: N39° 52′ E4° 19′ ==> 39.86666 // 4.31666
+# West: N27° 43′ W18° 09′ ==> 27.71666 // -18.15
 
-# venue_data_total_ES$longitude[venue_data_total_ES$longitude < 5.866944 | 
-                           # venue_data_total_ES$longitude > 15] <- NA
+venue_data_total_ES$longitude[venue_data_total_ES$longitude < -18.15 |
+                                venue_data_total_ES$longitude > 4.31666] <- NA
 
-# venue_data_total_ES$latitude[venue_data_total_ES$latitude < 47.271679 | 
-                        # venue_data_total_ES$latitude > 55.0846] <- NA
+venue_data_total_ES$latitude[venue_data_total_ES$latitude < 27.63333 | 
+                               venue_data_total_ES$latitude > 43.78333] <- NA
 
+# visualize Spanish venue data
 venue_data_total_ES %>% ggplot(aes(longitude, latitude)) + 
   geom_polygon(aes(x = long, y = lat, group = group), 
                data = map_data("world", region = "Spain"),
