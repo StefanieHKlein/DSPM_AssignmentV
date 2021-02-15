@@ -332,7 +332,7 @@ venue_content_p0_ES <- venue_response_p0_ES[["_embedded"]][["venues"]]
 names(venue_content_p0_ES)
 dim(venue_content_p0_ES)
 
-# fill data frame venue_data with values from venue_content
+# fill data frame venue_data with values from venue_content_p0_ES
 venue_data_p0_ES$name <- venue_content_p0_ES$name
 venue_data_p0_ES$city <- unlist(venue_content_p0_ES$city)
 venue_data_p0_ES$postalCode <- venue_content_p0_ES$postalCode
@@ -341,11 +341,11 @@ venue_data_p0_ES$url <- venue_content_p0_ES$url
 venue_data_p0_ES$longitude <- unlist(venue_content_p0_ES$location[1])
 venue_data_p0_ES$latitude <- unlist(venue_content_p0_ES$location[2])
 
-# inspect data frame venue_data
+# inspect data frame venue_data_p0_ES
 glimpse(venue_data_p0_ES)
 ```
 
-I then set up a data frame for the Spanish venues (pages 1-154 (0-153)) which I fill using a for loop.
+I then set up a data frame for the Spanish venues (pages 1-154 (0-152)) which I fill using a for loop.
 
 ```{r create_dataframe2_ES, message=FALSE, warning=FALSE}
 # get total number of elements
@@ -359,7 +359,7 @@ n <- totalElements - 20 - 6
 # The results are presented on 154 pages (153 full pages). 
 # 6 results remain on the last page.
 
-# create data frame for 20 (venues per page) * 153 (full pages) observations.
+# create data frame for 20 (venues per page) * 152 (full pages) observations.
 venue_data_all_ES <- data.frame(
   name = character(n),
   city = character(n),
@@ -482,7 +482,7 @@ venue_data_total_ES <- rbind(venue_data_p0_ES, venue_data_all_ES, venue_data_las
 glimpse(venue_data_total_ES)
 ```
 
-Before I visualize the Spanish venue data, I check the range for longitude and latitude.
+Before I visualize the Spanish venue data, I check the ranges for longitude and latitude.
 I decide to visualize the data for venues located on the Spanish mainland and on the Balearic and the Canary Islands.
 
 ```{r visualize_data_ES, message=FALSE, warning=FALSE}
